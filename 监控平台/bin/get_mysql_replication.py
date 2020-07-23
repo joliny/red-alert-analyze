@@ -52,8 +52,8 @@ def get_mysql_replication():
     try:
         cur=connect.cursor()
         connect.select_db('information_schema')
-        master_thread=cur.execute("select * from information_schema.processlist where COMMAND = 'Binlog Dump' or COMMAND = 'Binlog Dump GTID';")
-        slave_status=cur.execute('show slave status;')
+        main_thread=cur.execute("select * from information_schema.processlist where COMMAND = 'Binlog Dump' or COMMAND = 'Binlog Dump GTID';")
+        subordinate_status=cur.execute('show subordinate status;')
 
         datalist=[]
         uptime=cur.execute('SHOW GLOBAL STATUS LIKE "Uptime";');
@@ -68,46 +68,46 @@ def get_mysql_replication():
         version=cur.execute('select version();')
         version_data=cur.fetchone()
 
-        if master_thread >= 1:
+        if main_thread >= 1:
             datalist.append(int(1))
-            if slave_status <> 0:
+            if subordinate_status <> 0:
                 datalist.append(int(1))
             else:
                 datalist.append(int(0))
         else:
             datalist.append(int(0))
-            if slave_status <> 0:
+            if subordinate_status <> 0:
                 datalist.append(int(1))
             else:
                 datalist.append(int(0))
             
-        if slave_status <> 0:
+        if subordinate_status <> 0:
             read_only=cur.execute("select * from information_schema.global_variables where variable_name='read_only';")
             result=cur.fetchone()
             datalist.append(result[1])
-            slave_info=cur.execute('show slave status;')
+            subordinate_info=cur.execute('show subordinate status;')
             result=cur.fetchone()
-            master_server=result[1]
-            master_port=result[3]
-            slave_io_run=result[10]
-            slave_sql_run=result[11]
+            main_server=result[1]
+            main_port=result[3]
+            subordinate_io_run=result[10]
+            subordinate_sql_run=result[11]
             delay=result[32]
             current_binlog_file=result[9]
             current_binlog_pos=result[21]
-            master_binlog_file=result[5]
-            master_binlog_pos=result[6]
+            main_binlog_file=result[5]
+            main_binlog_pos=result[6]
            
-            datalist.append(master_server)
-            datalist.append(master_port)
-            datalist.append(slave_io_run)
-            datalist.append(slave_sql_run)
+            datalist.append(main_server)
+            datalist.append(main_port)
+            datalist.append(subordinate_io_run)
+            datalist.append(subordinate_sql_run)
             datalist.append(delay)
             datalist.append(current_binlog_file)
             datalist.append(current_binlog_pos)
-            datalist.append(master_binlog_file)
-            datalist.append(master_binlog_pos)
+            datalist.append(main_binlog_file)
+            datalist.append(main_binlog_pos)
         
-        elif master_thread >= 1:
+        elif main_thread >= 1:
              read_only=cur.execute("select * from information_schema.global_variables where variable_name='read_only';")
              result=cur.fetchone()
              datalist.append(result[1])
@@ -118,10 +118,10 @@ def get_mysql_replication():
              datalist.append('---')
              datalist.append('---')
              datalist.append('---')
-             master=cur.execute('show master status;')
-             master_result=cur.fetchone()
-             datalist.append(master_result[0])
-             datalist.append(master_result[1])
+             main=cur.execute('show main status;')
+             main_result=cur.fetchone()
+             datalist.append(main_result[0])
+             datalist.append(main_result[1])
         
         else:
             datalist=[]
@@ -132,7 +132,7 @@ def get_mysql_replication():
         #print result
         
         if result:
-            sql="replace into b_mysql_replication(db_id,db_ip,startup_time,run_time,version,is_master,is_slave,read_only,master_server,master_port,slave_io_run,slave_sql_run,delay,current_binlog_file,current_binlog_pos,master_binlog_file,master_binlog_pos) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+            sql="replace into b_mysql_replication(db_id,db_ip,startup_time,run_time,version,is_main,is_subordinate,read_only,main_server,main_port,subordinate_io_run,subordinate_sql_run,delay,current_binlog_file,current_binlog_pos,main_binlog_file,main_binlog_pos) values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
             param=(h_dbid,ip_addr,startup_time[0],run_time[0],version_data[0],result[0],result[1],result[2],result[3],result[4],result[5],result[6],result[7],result[8],result[9],result[10],result[11])
             func.mysql_exec(sql,param)
     except MySQLdb.Error,e:
