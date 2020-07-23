@@ -51,8 +51,8 @@ def main():
         if name in ("-t","--host_type"):
            h_type=value
            print "G_HOST_TYPE:"+h_type
-    if h_type=='slavestat':
-       chk_mysql_slave(h_dbid)
+    if h_type=='subordinatestat':
+       chk_mysql_subordinate(h_dbid)
     if h_type=='mysqlstat':
        connect_mysql(h_dbid)
     if h_type=='longsql':
@@ -192,18 +192,18 @@ def connect_mysql(g_dbid):
             insert_data(table_name,info)    
 
 
-               # Slave_IO_State:1
-                  # Master_Host:2
-                  # Master_User:3
-                  # Master_Port:4
+               # Subordinate_IO_State:1
+                  # Main_Host:2
+                  # Main_User:3
+                  # Main_Port:4
                 # Connect_Retry:5
-              # Master_Log_File:6
-          # Read_Master_Log_Pos:7
+              # Main_Log_File:6
+          # Read_Main_Log_Pos:7
                # Relay_Log_File:8
                 # Relay_Log_Pos:9
-        # Relay_Master_Log_File:10
-             # Slave_IO_Running:11
-            # Slave_SQL_Running:12
+        # Relay_Main_Log_File:10
+             # Subordinate_IO_Running:11
+            # Subordinate_SQL_Running:12
               # Replicate_Do_DB:13
           # Replicate_Ignore_DB:14
            # Replicate_Do_Table:15
@@ -213,36 +213,36 @@ def connect_mysql(g_dbid):
                    # Last_Errno:19
                    # Last_Error:20
                  # Skip_Counter:21
-          # Exec_Master_Log_Pos:22
+          # Exec_Main_Log_Pos:22
               # Relay_Log_Space:23
               # Until_Condition:24
                # Until_Log_File:25
                 # Until_Log_Pos:26
-           # Master_SSL_Allowed:27
-           # Master_SSL_CA_File:28
-           # Master_SSL_CA_Path:29
-              # Master_SSL_Cert:30
-            # Master_SSL_Cipher:31
-               # Master_SSL_Key:32
-        # Seconds_Behind_Master:33
-# Master_SSL_Verify_Server_Cert:34
+           # Main_SSL_Allowed:27
+           # Main_SSL_CA_File:28
+           # Main_SSL_CA_Path:29
+              # Main_SSL_Cert:30
+            # Main_SSL_Cipher:31
+               # Main_SSL_Key:32
+        # Seconds_Behind_Main:33
+# Main_SSL_Verify_Server_Cert:34
                 # Last_IO_Errno:35
                 # Last_IO_Error:36
                # Last_SQL_Errno:37
                # Last_SQL_Error:38
   # Replicate_Ignore_Server_Ids:39
-             # Master_Server_Id:40
-                  # Master_UUID:41
-             # Master_Info_File:42
+             # Main_Server_Id:40
+                  # Main_UUID:41
+             # Main_Info_File:42
                     # SQL_Delay:43
           # SQL_Remaining_Delay:44
-      # Slave_SQL_Running_State:45
-           # Master_Retry_Count:46
-                  # Master_Bind:47
+      # Subordinate_SQL_Running_State:45
+           # Main_Retry_Count:46
+                  # Main_Bind:47
       # Last_IO_Error_Timestamp:48
      # Last_SQL_Error_Timestamp:49
-               # Master_SSL_Crl:50
-           # Master_SSL_Crlpath:51
+               # Main_SSL_Crl:50
+           # Main_SSL_Crlpath:51
            # Retrieved_Gtid_Set:52
             # Executed_Gtid_Set:53
                 # Auto_Position:54
@@ -254,11 +254,11 @@ def  getStatus(conn,query):
      try:
         return result[0]
      except Exception as e:
-        result="slavestop"
+        result="subordinatestop"
         return result
     
 
-def chk_mysql_slave(g_dbid):
+def chk_mysql_subordinate(g_dbid):
     get_mysql_pass(g_dbid)
     get_mysql_param() 
     g_completed='N'
@@ -266,34 +266,34 @@ def chk_mysql_slave(g_dbid):
     g_gmt_modify=g_gmt_create
     table_name='b_mysql_quota_collect_day'
     mysqltarget_db = MySQLdb.connect(host=ip_addr, user=username,passwd=password,db='information_schema',port=int(port) ,charset="utf8")
-    query="show slave status"
+    query="show subordinate status"
     status = getStatus(mysqltarget_db,query)
-    if status=='slavestop':
+    if status=='subordinatestop':
        a=0
        #t_msg='My:'+ip_addr+':'+'PORT:'+str(port)+':SLAVE STOP!!!!!:'
-       #t_tmd5='mysql slave stop!!'
+       #t_tmd5='mysql subordinate stop!!'
        #t_id=monitor_db.get('hid')+datetime.datetime.now().strftime('%Y%m%d%H%M%S')+str(random.randint(10000,90000))
        #info=[t_id,g_dbid,t_msg,g_completed,t_tmd5,g_gmt_create,g_gmt_modify,'1','6']
        #insert_data('b_error_msg',info)
     else:   
-        Seconds_Behind_Master, Slave_IO_Running, Slave_SQL_Running=status[32],status[10],status[11]
-        if Slave_IO_Running == 'Yes' and Slave_SQL_Running == 'Yes':
-             v_name='Seconds_Behind_Master'
+        Seconds_Behind_Main, Subordinate_IO_Running, Subordinate_SQL_Running=status[32],status[10],status[11]
+        if Subordinate_IO_Running == 'Yes' and Subordinate_SQL_Running == 'Yes':
+             v_name='Seconds_Behind_Main'
              v_name=v_name.upper()
-             v_value=Seconds_Behind_Master
+             v_value=Seconds_Behind_Main
              get_mysql_quota_collect_day_lastval(host_id,g_dbid,str(mysql_param.get(v_name)))
              t_id=monitor_db.get('hid')+datetime.datetime.now().strftime('%Y%m%d%H%M%S')+str(random.randint(10000,90000))
              info=[t_id,host_id,g_dbid,mysql_param.get(v_name),v_name,v_value,mysql_qcdl_lastval,g_completed,g_gmt_create,g_gmt_modify,mysql_qcdl_lastval_date]
              insert_data(table_name,info)  
-             #if Seconds_Behind_Master >= 60:
-             #    t_msg='My:'+ip_addr+':'+'PORT:'+str(port)+':Behind:'+str(Seconds_Behind_Master)
+             #if Seconds_Behind_Main >= 60:
+             #    t_msg='My:'+ip_addr+':'+'PORT:'+str(port)+':Behind:'+str(Seconds_Behind_Main)
              #    t_tmd5='mysql status'
              #    t_id=monitor_db.get('hid')+datetime.datetime.now().strftime('%Y%m%d%H%M%S')+str(random.randint(10000,90000))  
              #    info=[t_id,g_dbid,t_msg,g_completed,t_tmd5,g_gmt_create,g_gmt_modify,'1','2']
              #    insert_data('b_error_msg',info)
         else:
              t_msg='My:'+ip_addr+':'+'PORT:'+str(port)+':SLAVE STOP!!!!!:'
-             t_tmd5='mysql slave stop!!'
+             t_tmd5='mysql subordinate stop!!'
              t_id=monitor_db.get('hid')+datetime.datetime.now().strftime('%Y%m%d%H%M%S')+str(random.randint(10000,90000))
              info=[t_id,g_dbid,t_msg,g_completed,t_tmd5,g_gmt_create,g_gmt_modify,'0','6']
              insert_data('b_error_msg',info)
@@ -363,8 +363,8 @@ def chk_innodb(g_dbid):
 if __name__=="__main__":
        h_dbid=sys.argv[1]   #要访问的db_id
        h_type=sys.argv[2]
-       if h_type=='slavestat':
-          chk_mysql_slave(h_dbid)
+       if h_type=='subordinatestat':
+          chk_mysql_subordinate(h_dbid)
        if h_type=='mysqlstat':
           connect_mysql(h_dbid)
        if h_type=='longsql':
@@ -377,9 +377,9 @@ if __name__=="__main__":
 def usage():
     print '''
 ---------------usage:------------------
-python get_mysql_info_new.py -d dbid -t type (slavestat,mysqlstat,longsql,sqlresult)
+python get_mysql_info_new.py -d dbid -t type (subordinatestat,mysqlstat,longsql,sqlresult)
 or
-python get_mysql_info_new.py --dbid=dbid --host_type=(slavestat,mysqlstat,longsql,sqlresult)
+python get_mysql_info_new.py --dbid=dbid --host_type=(subordinatestat,mysqlstat,longsql,sqlresult)
 ---------------------------------------
 '''
 
